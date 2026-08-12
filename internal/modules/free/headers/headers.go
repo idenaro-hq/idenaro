@@ -159,7 +159,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 	if err != nil {
 		return nil, nil // host unreachable - not an error condition
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	for _, rule := range securityHeaderRules {
 		headerValue := resp.Header.Get(rule.HeaderName)

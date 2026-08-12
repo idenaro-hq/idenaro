@@ -98,7 +98,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 			continue
 		}
 		responseBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
 			continue

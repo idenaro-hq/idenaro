@@ -152,7 +152,7 @@ func (s *Scanner) findProtectedEndpoint(ctx context.Context, target modules.Targ
 			tried = append(tried, fmt.Sprintf("GET %s → error (%s)", u, err))
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		tried = append(tried, fmt.Sprintf("GET %s → HTTP %d", u, resp.StatusCode))
 		if resp.StatusCode == http.StatusUnauthorized || resp.StatusCode == http.StatusForbidden {
 			return u, tried
@@ -172,7 +172,7 @@ func (s *Scanner) probeBaseline(ctx context.Context, endpointURL string) int {
 	if err != nil {
 		return 0
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	return resp.StatusCode
 }
 
@@ -198,7 +198,7 @@ func (s *Scanner) checkAlgNone(ctx context.Context, target modules.Target, endpo
 	if err != nil {
 		return nil
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	return checks.AlgNone(target.Host, endpointURL, baseline, resp.StatusCode)
 }
@@ -223,7 +223,7 @@ func (s *Scanner) checkExpiredToken(ctx context.Context, target modules.Target, 
 	if err != nil {
 		return nil
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	return checks.ExpiredToken(target.Host, endpointURL, baseline, resp.StatusCode)
 }
@@ -251,7 +251,7 @@ func (s *Scanner) probeCORSHeaders(ctx context.Context, endpointURL string) (aca
 		if err != nil {
 			return "", false
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		a := resp.Header.Get("Access-Control-Allow-Origin")
 		c := strings.EqualFold(resp.Header.Get("Access-Control-Allow-Credentials"), "true")
 		return a, c
@@ -281,7 +281,7 @@ func (s *Scanner) checkSessionCookies(ctx context.Context, target modules.Target
 			continue
 		}
 		probed = append(probed, fmt.Sprintf("GET %s → HTTP %d (%d cookies)", u, resp.StatusCode, len(resp.Cookies())))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		for _, cookie := range resp.Cookies() {
 			key := cookie.Name + "@" + path
@@ -315,7 +315,7 @@ func (s *Scanner) checkCallbackStateParam(ctx context.Context, target modules.Ta
 		if err != nil {
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if resp.StatusCode == http.StatusNotFound {
 			continue
@@ -352,7 +352,7 @@ func (s *Scanner) checkOpenRedirect(ctx context.Context, target modules.Target) 
 		if err != nil {
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if resp.StatusCode < 300 || resp.StatusCode >= 400 {
 			continue

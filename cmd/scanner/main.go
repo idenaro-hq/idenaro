@@ -263,7 +263,7 @@ func runScanCommand(cmd *cobra.Command, args []string) error {
 		if createErr != nil {
 			return fmt.Errorf("cannot create output file: %w", createErr)
 		}
-		defer outputFile.Close()
+		defer func() { _ = outputFile.Close() }()
 		outputWriter = outputFile
 	}
 
@@ -302,10 +302,10 @@ func printBanner(w *os.File, targetCount int, modules []string, timeoutSec int, 
 	bold := color.New(color.FgCyan, color.Bold)
 	acc := color.New(color.FgHiCyan)
 
-	fmt.Fprintln(w)
-	bold.Fprintln(w, "  idenaro  ·  IAM Security Scanner")
-	dim.Fprintln(w, "  ─────────────────────────────────────────────────")
-	fmt.Fprintf(w, "  %s %s   %s %s   %s %ds\n",
+	_, _ = fmt.Fprintln(w)
+	_, _ = bold.Fprintln(w, "  idenaro  ·  IAM Security Scanner")
+	_, _ = dim.Fprintln(w, "  ─────────────────────────────────────────────────")
+	_, _ = fmt.Fprintf(w, "  %s %s   %s %s   %s %ds\n",
 		dim.Sprint("targets"),
 		acc.Sprint(targetCount),
 		dim.Sprint("modules"),
@@ -313,7 +313,7 @@ func printBanner(w *os.File, targetCount int, modules []string, timeoutSec int, 
 		dim.Sprint("timeout"),
 		timeoutSec,
 	)
-	fmt.Fprintln(w)
+	_, _ = fmt.Fprintln(w)
 }
 
 // printSummary writes the per-host result table to stderr.
@@ -328,14 +328,14 @@ func printSummary(results []engine.ScanResult, elapsed time.Duration, colorOn bo
 		finding.Info:     color.New(color.FgHiBlue),
 	}
 
-	fmt.Fprintln(os.Stderr)
-	dim.Fprintln(os.Stderr, "  ──────────────────────────────────────────────────────────────────────────────────────────────────")
-	bold.Fprintln(os.Stderr, "  Results")
-	dim.Fprintln(os.Stderr, "  ──────────────────────────────────────────────────────────────────────────────────────────────────")
+	_, _ = fmt.Fprintln(os.Stderr)
+	_, _ = dim.Fprintln(os.Stderr, "  ──────────────────────────────────────────────────────────────────────────────────────────────────")
+	_, _ = bold.Fprintln(os.Stderr, "  Results")
+	_, _ = dim.Fprintln(os.Stderr, "  ──────────────────────────────────────────────────────────────────────────────────────────────────")
 
 	for _, r := range results {
 		if r.Error != nil {
-			color.New(color.FgRed).Fprintf(os.Stderr, "  [ERROR] %s: %v\n", r.Host, r.Error)
+			_, _ = color.New(color.FgRed).Fprintf(os.Stderr, "  [ERROR] %s: %v\n", r.Host, r.Error)
 			continue
 		}
 		counts := make(map[finding.Severity]int)
@@ -374,7 +374,7 @@ func printSummary(results []engine.ScanResult, elapsed time.Duration, colorOn bo
 		fmt.Fprintf(os.Stderr, "  %s  %s  %s  %s\n", bold.Sprint(host), sev, dim.Sprint(score), dur)
 	}
 
-	dim.Fprintln(os.Stderr, "  ──────────────────────────────────────────────────────────────────────────────────────────────────")
+	_, _ = dim.Fprintln(os.Stderr, "  ──────────────────────────────────────────────────────────────────────────────────────────────────")
 	fmt.Fprintf(os.Stderr, "  %s %s\n\n", dim.Sprint("completed in"), elapsed.Round(time.Millisecond))
 }
 

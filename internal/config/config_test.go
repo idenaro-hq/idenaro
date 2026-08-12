@@ -99,13 +99,15 @@ func TestLoadTargetsFromFile(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(f.Name())
+	defer func() { _ = os.Remove(f.Name()) }()
 
 	_, err = f.WriteString("auth.example.com\n# comment\nsso.example.com\n\n")
 	if err != nil {
 		t.Fatal(err)
 	}
-	f.Close()
+	if err := f.Close(); err != nil {
+		t.Fatal(err)
+	}
 
 	targets, err := config.LoadTargetsFromFile(f.Name())
 	if err != nil {

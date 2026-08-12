@@ -34,7 +34,7 @@ type Finding struct {
 	Title          string   `json:"title"`
 	Description    string   `json:"description"`
 	Severity       Severity `json:"severity"`
-	Confidence     string   `json:"confidence"`    // "HIGH" | "MEDIUM" | "LOW"
+	Confidence     string   `json:"confidence"` // "HIGH" | "MEDIUM" | "LOW"
 	RiskScore      int      `json:"risk_score"`
 	Host           string   `json:"host"`
 	Evidence       []string `json:"evidence"`

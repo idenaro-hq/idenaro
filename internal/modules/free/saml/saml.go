@@ -118,12 +118,12 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 			continue
 		}
 		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			continue
 		}
 
 		responseBody, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil {
 			continue
 		}
@@ -178,11 +178,11 @@ func FetchMetadata(ctx context.Context, client *http.Client, target modules.Targ
 			continue
 		}
 		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			continue
 		}
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 2<<20))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil {
 			continue
 		}

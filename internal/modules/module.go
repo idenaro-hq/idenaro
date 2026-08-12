@@ -28,7 +28,7 @@ type Target struct {
 	Realm     string // Keycloak realm; empty means use the default ("master")
 	Path      string // deprecated path hint kept for internal parse use; prefer ClientApp
 	ClientApp string // optional client application URL, e.g. "https://app.example.com";
-	                 // only the client and client-pro modules read this - all other modules ignore it
+	// only the client and client-pro modules read this - all other modules ignore it
 }
 
 // RealmOrDefault returns the configured Keycloak realm, falling back to "master".

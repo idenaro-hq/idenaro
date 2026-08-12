@@ -203,16 +203,16 @@ type TextOptions struct {
 }
 
 var (
-	clrCritical    = color.New(color.FgRed, color.Bold)
-	clrHigh        = color.New(color.FgHiRed)
-	clrMedium      = color.New(color.FgYellow)
-	clrLow         = color.New(color.FgCyan)
-	clrInfo        = color.New(color.FgHiBlue)
-	clrBold        = color.New(color.Bold)
-	clrDim         = color.New(color.FgHiBlack)
-	clrGreen       = color.New(color.FgHiGreen)
-	clrEvidence    = color.New(color.FgHiBlue)
-	clrHostHeader  = color.New(color.FgHiCyan, color.Bold)
+	clrCritical   = color.New(color.FgRed, color.Bold)
+	clrHigh       = color.New(color.FgHiRed)
+	clrMedium     = color.New(color.FgYellow)
+	clrLow        = color.New(color.FgCyan)
+	clrInfo       = color.New(color.FgHiBlue)
+	clrBold       = color.New(color.Bold)
+	clrDim        = color.New(color.FgHiBlack)
+	clrGreen      = color.New(color.FgHiGreen)
+	clrEvidence   = color.New(color.FgHiBlue)
+	clrHostHeader = color.New(color.FgHiCyan, color.Bold)
 )
 
 func severityPrinter(sev finding.Severity) *color.Color {
@@ -240,21 +240,35 @@ func WriteText(w io.Writer, results []engine.ScanResult, opts TextOptions) error
 
 	sep := clrDim.Sprint(strings.Repeat("─", 55))
 
-	clrBold.Fprintln(w, "\n  Findings")
-	clrDim.Fprintf(w, "  Generated: %s\n", time.Now().UTC().Format("2006-01-02 15:04:05 UTC"))
+	if _, err := clrBold.Fprintln(w, "\n  Findings"); err != nil {
+		return err
+	}
+	if _, err := clrDim.Fprintf(w, "  Generated: %s\n", time.Now().UTC().Format("2006-01-02 15:04:05 UTC")); err != nil {
+		return err
+	}
 
 	for _, scanResult := range results {
-		fmt.Fprintln(w)
-		fmt.Fprintln(w, sep)
-		fmt.Fprintf(w, "  %s  %s  %s\n",
+		if _, err := fmt.Fprintln(w); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, sep); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(w, "  %s  %s  %s\n",
 			clrHostHeader.Sprint(scanResult.Host),
 			clrDim.Sprintf("score:%d", scanResult.OverallScore),
 			clrDim.Sprintf("(%s)", scanResult.Duration.Round(time.Millisecond)),
-		)
-		fmt.Fprintln(w, sep)
+		); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintln(w, sep); err != nil {
+			return err
+		}
 
 		if len(scanResult.Findings) == 0 {
-			clrGreen.Fprintln(w, "  ✓  No findings")
+			if _, err := clrGreen.Fprintln(w, "  ✓  No findings"); err != nil {
+				return err
+			}
 			continue
 		}
 
@@ -262,19 +276,33 @@ func WriteText(w io.Writer, results []engine.ScanResult, opts TextOptions) error
 			sev := severityPrinter(f.Severity)
 			badge := sev.Sprintf("  %-10s", "["+string(f.Severity)+"]")
 			title := clrBold.Sprint(f.Title)
-			fmt.Fprintf(w, "%s %s\n", badge, title)
-			fmt.Fprintf(w, "  %s  %s\n", strings.Repeat(" ", 10), clrDim.Sprint(f.Description))
+			if _, err := fmt.Fprintf(w, "%s %s\n", badge, title); err != nil {
+				return err
+			}
+			if _, err := fmt.Fprintf(w, "  %s  %s\n", strings.Repeat(" ", 10), clrDim.Sprint(f.Description)); err != nil {
+				return err
+			}
 			if len(f.Evidence) > 0 {
-				fmt.Fprintf(w, "  %s  %s\n", strings.Repeat(" ", 10), clrEvidence.Sprint("Evidence:"))
+				if _, err := fmt.Fprintf(w, "  %s  %s\n", strings.Repeat(" ", 10), clrEvidence.Sprint("Evidence:")); err != nil {
+					return err
+				}
 				for _, evidenceLine := range f.Evidence {
-					fmt.Fprintf(w, "  %s  %s\n", strings.Repeat(" ", 10), clrEvidence.Sprint("· "+evidenceLine))
+					if _, err := fmt.Fprintf(w, "  %s  %s\n", strings.Repeat(" ", 10), clrEvidence.Sprint("· "+evidenceLine)); err != nil {
+						return err
+					}
 				}
 			}
-			fmt.Fprintf(w, "  %s  %s\n", strings.Repeat(" ", 10), clrGreen.Sprint("→ "+f.Recommendation))
-			if len(f.NIS2Articles) > 0 {
-				fmt.Fprintf(w, "  %s  %s %s\n", strings.Repeat(" ", 10), clrDim.Sprint("NIS2:"), strings.Join(f.NIS2Articles, ", "))
+			if _, err := fmt.Fprintf(w, "  %s  %s\n", strings.Repeat(" ", 10), clrGreen.Sprint("→ "+f.Recommendation)); err != nil {
+				return err
 			}
-			fmt.Fprintln(w)
+			if len(f.NIS2Articles) > 0 {
+				if _, err := fmt.Fprintf(w, "  %s  %s %s\n", strings.Repeat(" ", 10), clrDim.Sprint("NIS2:"), strings.Join(f.NIS2Articles, ", ")); err != nil {
+					return err
+				}
+			}
+			if _, err := fmt.Fprintln(w); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

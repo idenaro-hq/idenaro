@@ -105,11 +105,11 @@ func FetchDiscovery(ctx context.Context, client *http.Client, target modules.Tar
 			continue
 		}
 		if resp.StatusCode != http.StatusOK {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			continue
 		}
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil || len(body) == 0 {
 			continue
 		}

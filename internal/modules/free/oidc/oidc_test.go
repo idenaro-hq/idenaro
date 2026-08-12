@@ -72,7 +72,7 @@ func TestOIDC_ExposedDiscovery(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/.well-known/openid-configuration" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(discovery)
+			_ = json.NewEncoder(w).Encode(discovery)
 			return
 		}
 		http.NotFound(w, r)
@@ -113,7 +113,7 @@ func TestOIDC_HTTPAuthEndpoint(t *testing.T) {
 	srv := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/.well-known/openid-configuration" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(discovery)
+			_ = json.NewEncoder(w).Encode(discovery)
 			return
 		}
 		http.NotFound(w, r)
