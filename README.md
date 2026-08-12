@@ -95,7 +95,7 @@ Run `idenaro scan --help` for the full flag reference.
 idenaro/
 ├── cmd/scanner/                   # CLI entrypoint (cobra)
 ├── internal/
-│   ├── config/                     # Flags, target parsing, FreeModules list
+│   ├── config/                    # Flags, target parsing, FreeModules list
 │   ├── engine/                    # Concurrent per-target module orchestration
 │   ├── modules/
 │   │   ├── module.go              # Module interface + Target struct
@@ -105,7 +105,7 @@ idenaro/
 │   │       ├── headers/
 │   │       ├── endpoints/
 │   │       └── client/
-│   ├── finding/                    # Finding struct + severity
+│   ├── finding/                   # Finding struct + severity
 │   ├── scoring/                   # Risk score calculation
 │   ├── i18n/                      # en/de report strings + module docs
 │   └── report/                    # JSON, HTML, and text output
