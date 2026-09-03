@@ -1,0 +1,11 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap');
+
+@import './styles/tokens.css';
+@import './styles/shell.css';
+@import './styles/sidebar.css';
+@import './styles/layout.css';
+@import './styles/forms.css';
+@import './styles/results.css';
+@import './styles/docs.css';
+@import './styles/settings.css';
+@import './styles/misc.css';

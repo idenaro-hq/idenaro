@@ -1,0 +1,53 @@
+:root {
+  /* Dark mode - content canvas */
+  --bg:     #161c28;
+  --bg-2:   #1c2438;   /* cards / panels */
+  --bg-3:   #232d48;   /* hover */
+  --bg-4:   #2a3558;   /* active / pressed */
+
+  /* Chrome (titlebar + sidebar) */
+  --bg-1:   #0f1520;
+
+  /* Borders */
+  --line:        rgba(255, 255, 255, 0.14);
+  --line-bright: rgba(255, 255, 255, 0.24);
+
+  /* Text */
+  --text:   #d8e0f0;
+  --text-1: #8090b4;
+  --text-2: #50607c;
+
+  /* Purple brand accent */
+  --accent:     #4a9eff;
+  --accent-dim: rgba(74, 158, 255, 0.12);
+
+  --c-crit:  #f03c60;
+  --c-high:  #f07840;
+  --c-med:   #d8b840;
+  --c-low:   #4ec870;
+  --c-info:  #50b8e8;
+  --c-chain: #b870f0;
+
+  --sidebar-w: 220px;
+  --title-h: 42px;
+  --r: 2px;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+html {}
+
+html, body, #root {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}

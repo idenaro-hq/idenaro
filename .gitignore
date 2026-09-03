@@ -1,4 +1,7 @@
 /bin/
 /dist/
 *.log
+node_modules/
+cmd/wails/frontend/dist/
+cmd/wails/build/bin/
 

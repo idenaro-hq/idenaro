@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 	"time"
 
@@ -15,14 +16,52 @@ import (
 	"idenaro/internal/finding"
 	"idenaro/internal/i18n"
 	"idenaro/internal/modules"
-	"idenaro/internal/modules/free/client"
+	freeclient "idenaro/internal/modules/free/client"
 	"idenaro/internal/modules/free/endpoints"
 	"idenaro/internal/modules/free/headers"
 	"idenaro/internal/modules/free/oidc"
 	"idenaro/internal/modules/free/saml"
+	proclient "idenaro/internal/modules/pro/client"
+	"idenaro/internal/modules/pro/cookies"
+	"idenaro/internal/modules/pro/cors"
+	"idenaro/internal/modules/pro/csp"
+	"idenaro/internal/modules/pro/enumeration"
+	"idenaro/internal/modules/pro/lifecycle"
+	"idenaro/internal/modules/pro/mfa"
+	oidcpro "idenaro/internal/modules/pro/oidc"
+	"idenaro/internal/modules/pro/products"
+	"idenaro/internal/modules/pro/redirects"
+	samlpro "idenaro/internal/modules/pro/saml"
+	"idenaro/internal/modules/pro/scim"
+	"idenaro/internal/modules/pro/tls"
+	"idenaro/internal/modules/pro/tokens"
+	"idenaro/internal/nis2"
 	"idenaro/internal/report"
+	"idenaro/internal/scoring"
 	"idenaro/pkg/httpclient"
 )
+
+// proModuleNames are all module names that used to be gated behind a pro
+// license. They now ship unconditionally as part of the single open-source
+// binary. This list extends config.AllModules at init time so ValidateModules
+// accepts them.
+var proModuleNames = []string{
+	"oidc-pro", "saml-pro", "tls", "cookies", "cors", "csp",
+	"redirects", "tokens", "mfa", "lifecycle", "scim", "products", "enumeration", "client-pro",
+}
+
+func init() {
+	// Extend AllModules so --modules flag validation accepts the formerly-pro names.
+	seen := make(map[string]bool, len(config.AllModules))
+	for _, n := range config.AllModules {
+		seen[n] = true
+	}
+	for _, n := range proModuleNames {
+		if !seen[n] {
+			config.AllModules = append(config.AllModules, n)
+		}
+	}
+}
 
 // isTerminal returns true when f is connected to an interactive terminal.
 func isTerminal(f *os.File) bool {
@@ -49,13 +88,19 @@ var (
 	flagPlain        bool
 )
 
+// Version is the idenaro release version, kept in sync with the UI
+// (cmd/wails/docs.go GetAppVersion) and the repo-root VERSION file.
+const Version = "1.1.0"
+
 var rootCmd = &cobra.Command{
-	Use:   "idenaro",
-	Short: "idenaro - IAM misconfiguration scanner",
+	Use:     "idenaro",
+	Short:   "idenaro - IAM misconfiguration scanner",
+	Version: Version,
 	Long: `idenaro scans web-facing identity and access management infrastructure
 for misconfigurations without requiring credentials or elevated privileges.
 
-Checks: OIDC, SAML, Security Headers, Exposed Endpoints.
+Checks: OIDC, SAML, Security Headers, Exposed Endpoints, TLS, Cookies, CORS,
+        CSP, Redirects, Tokens, MFA, Lifecycle, SCIM, Products, Enumeration.
 Output: findings in text, JSON, or HTML format.`,
 }
 
@@ -64,7 +109,7 @@ var scanCmd = &cobra.Command{
 	Short: "Run a scan against one or more targets",
 	Example: `  idenaro scan --target auth.example.com
   idenaro scan --target auth.example.com --format html --output report.html
-  idenaro scan --targets targets.txt --modules oidc,saml
+  idenaro scan --targets targets.txt --modules oidc,tls,cookies
   idenaro scan --target auth.example.com --format json | jq '.results[].findings[] | select(.severity=="HIGH")'`,
 	RunE: runScanCommand,
 }
@@ -74,8 +119,10 @@ var listModulesCmd = &cobra.Command{
 	Short: "List all available scanner modules",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("Available modules:")
-		for _, moduleName := range config.FreeModules {
-			fmt.Printf("  · %s\n", moduleName)
+		all := append([]string{}, config.FreeModules...)
+		all = append(all, proModuleNames...)
+		for _, name := range all {
+			fmt.Printf("  · %s\n", name)
 		}
 	},
 }
@@ -100,7 +147,7 @@ func init() {
 	scanCmd.Flags().StringVar(&flagRealm, "realm", "",
 		"Keycloak realm to probe (overrides realm extracted from target URL; default: master)")
 	scanCmd.Flags().StringVar(&flagClient, "client", "",
-		"Client application URL to probe with the client module (e.g. https://app.example.com)")
+		"Client application URL to probe with the client and client-pro modules (e.g. https://app.example.com)")
 	scanCmd.Flags().StringVar(&flagLang, "lang", "en",
 		"Report language: en | de")
 	scanCmd.Flags().BoolVarP(&flagPlain, "plain", "p", false,
@@ -110,15 +157,45 @@ func init() {
 	rootCmd.AddCommand(listModulesCmd)
 }
 
-// freeModules returns the ordered list of modules available in the free tier.
-func freeModules(opts httpclient.Options) []modules.Module {
+// allModules returns the full ordered list of modules shipped in this
+// (single-tier, fully open-source) binary.
+func allModules(opts httpclient.Options) []modules.Module {
 	return []modules.Module{
 		oidc.New(opts),
 		saml.New(opts),
 		headers.New(opts),
 		endpoints.New(opts),
-		client.New(opts),
+		freeclient.New(opts),
+		oidcpro.New(opts),
+		samlpro.New(opts),
+		tls.New(opts),
+		cookies.New(opts),
+		cors.New(opts),
+		csp.New(opts),
+		redirects.New(opts),
+		tokens.New(opts),
+		mfa.New(opts),
+		lifecycle.New(opts),
+		scim.New(opts),
+		products.New(opts),
+		enumeration.New(opts),
+		proclient.New(opts),
 	}
+}
+
+// postProcess runs the full pipeline after all modules complete: score
+// individual findings, apply chain-finding rules, map NIS2 articles, then
+// sort by severity.
+func postProcess(findings []finding.Finding) []finding.Finding {
+	findings = scoring.ScoreAll(findings)
+	findings = scoring.ApplyChaining(findings)
+	for i := range findings {
+		findings[i].NIS2Articles = nis2.Lookup(findings[i].Tags)
+	}
+	sort.SliceStable(findings, func(i, j int) bool {
+		return finding.SeverityOrder[findings[i].Severity] > finding.SeverityOrder[findings[j].Severity]
+	})
+	return findings
 }
 
 func runScanCommand(cmd *cobra.Command, args []string) error {
@@ -130,6 +207,7 @@ func runScanCommand(cmd *cobra.Command, args []string) error {
 	}
 
 	scanConfig := config.DefaultConfig()
+	scanConfig.ActiveModules = append(append([]string{}, config.FreeModules...), proModuleNames...)
 	scanConfig.Verbose = flagVerbose
 	scanConfig.OutputFormat = flagOutputFormat
 	scanConfig.OutputFile = flagOutputFile
@@ -178,16 +256,16 @@ func runScanCommand(cmd *cobra.Command, args []string) error {
 	}
 	scanConfig.Targets = parsedTargets
 
-	// When --client is set, exclude the client module from the IdP scan so it
-	// runs only against the client target in a dedicated second pass below.
+	// When --client is set, exclude client modules from the IdP scan so they
+	// run only against the client target in a dedicated second pass below.
 	if flagClient != "" {
-		idpModules := make([]string, 0, len(config.FreeModules))
 		base := scanConfig.ActiveModules
 		if len(base) == 0 {
-			base = config.FreeModules
+			base = append(append([]string{}, config.FreeModules...), proModuleNames...)
 		}
+		idpModules := make([]string, 0, len(base))
 		for _, m := range base {
-			if m != "client" {
+			if m != "client" && m != "client-pro" {
 				idpModules = append(idpModules, m)
 			}
 		}
@@ -210,7 +288,7 @@ func runScanCommand(cmd *cobra.Command, args []string) error {
 
 	httpOpts := scanConfig.HTTPOptions
 	httpOpts.Timeout = scanConfig.Timeout
-	scanEngine := engine.New(scanConfig, freeModules(httpOpts))
+	scanEngine := engine.New(scanConfig, allModules(httpOpts), engine.WithPostProcess(postProcess))
 	if scanConfig.Verbose {
 		fmt.Fprintf(os.Stderr, "Active modules: %s\n", strings.Join(scanEngine.ActiveModuleNames(), ", "))
 	}
@@ -227,17 +305,17 @@ func runScanCommand(cmd *cobra.Command, args []string) error {
 	scanStart := time.Now()
 	results := scanEngine.Run(context.Background())
 
-	// Run client module separately against the client app target so its findings
-	// appear under the client host rather than the IdP host.
+	// Run client modules separately against the client app target so their
+	// findings appear under the client host rather than the IdP host.
 	if flagClient != "" {
 		clientTargets, err := config.ParseTargets([]string{flagClient})
 		if err == nil && len(clientTargets) > 0 {
 			clientCfg := config.DefaultConfig()
-			clientCfg.ActiveModules = []string{"client"}
+			clientCfg.ActiveModules = []string{"client-pro"}
 			clientCfg.Targets = clientTargets
 			clientCfg.HTTPOptions = scanConfig.HTTPOptions
 			clientCfg.Timeout = scanConfig.Timeout
-			clientEngine := engine.New(clientCfg, freeModules(httpOpts))
+			clientEngine := engine.New(clientCfg, allModules(httpOpts), engine.WithPostProcess(postProcess))
 			results = append(results, clientEngine.Run(context.Background())...)
 		}
 	}

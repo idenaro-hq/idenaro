@@ -1,0 +1,11 @@
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  gap: 16px;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-label { font-size: 13px; color: var(--text-1); line-height: 20px; }
+.settings-desc  { font-size: 11px; color: var(--text-2); margin-top: 2px; line-height: 17px; }
