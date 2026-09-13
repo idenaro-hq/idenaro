@@ -81,7 +81,7 @@ func LegacyVersionAccepted(ctx context.Context, host, tlsAddr, serverName string
 		if err != nil {
 			continue // server rejected this version - good
 		}
-		conn.Close()
+		_ = conn.Close()
 
 		f := finding.NewFinding(moduleName, host,
 			fmt.Sprintf("Deprecated TLS version accepted by server: %s", p.name),

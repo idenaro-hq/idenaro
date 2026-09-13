@@ -11,7 +11,8 @@ func IDP(host, wantAuthnRequestsSigned string, keyDescs []KeyDescriptor) []findi
 	var findings []finding.Finding
 
 	want := wantAuthnRequestsSigned
-	if want == "false" || want == "" {
+	switch want {
+	case "false", "":
 		f := finding.NewFinding(moduleName, host,
 			"SAML IdP does not require signed AuthnRequests",
 			"WantAuthnRequestsSigned=false (or absent) means the IdP accepts unsigned authentication "+
@@ -44,7 +45,7 @@ func IDP(host, wantAuthnRequestsSigned string, keyDescs []KeyDescriptor) []findi
 			"RelayState validation and CSRF tokens at the SP."
 		f2.Tags = []string{"saml", "iam"}
 		findings = append(findings, f2)
-	} else if want == "true" {
+	case "true":
 		f := finding.NewFinding(moduleName, host,
 			"SAML IdP requires signed AuthnRequests",
 			"WantAuthnRequestsSigned=true means the IdP validates that all incoming authentication "+

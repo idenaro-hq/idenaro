@@ -67,7 +67,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 	}
 	tlsConn := conn.(*tls.Conn)
 	state := tlsConn.ConnectionState()
-	conn.Close()
+	_ = conn.Close()
 
 	if len(state.PeerCertificates) == 0 {
 		return findings, nil
@@ -83,7 +83,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 	if err == nil {
 		req.Header.Set("User-Agent", httpclient.DefaultUserAgent)
 		if resp, err := s.noFollowClient.Do(req); err == nil {
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			findings = append(findings, tlschecks.HTTPRedirect(
 				target.Host, httpURL,
 				resp.StatusCode,
@@ -98,7 +98,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 		fallbackReq.Header.Set("User-Agent", httpclient.DefaultUserAgent)
 		if fallbackResp, err := s.insecureClient.Do(fallbackReq); err == nil {
 			responseBody, _ := io.ReadAll(io.LimitReader(fallbackResp.Body, 512*1024))
-			fallbackResp.Body.Close()
+			_ = fallbackResp.Body.Close()
 			findings = append(findings, tlschecks.MixedContent(
 				target.Host, httpsURL,
 				strings.ToLower(string(responseBody)),
