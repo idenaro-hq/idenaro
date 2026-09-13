@@ -25,7 +25,7 @@ test:
 	$(GO) test $$($(GO) list ./... | grep -v /cmd/wails) -v -count=1
 
 lint:
-	golangci-lint run $$($(GO) list ./... | grep -v /cmd/wails)
+	golangci-lint run $$($(GO) list -f '{{.Dir}}' ./... | grep -v /cmd/wails | sed "s|^$$(pwd)|.|")
 
 tidy:
 	$(GO) mod tidy
