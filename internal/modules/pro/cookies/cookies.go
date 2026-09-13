@@ -42,8 +42,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 		if err != nil {
 			continue
 		}
-		resp.Body.Close()
-
+		_ = resp.Body.Close()
 		for _, cookie := range resp.Cookies() {
 			deduplicationKey := cookie.Name + "@" + path
 			if seenCookieKeys[deduplicationKey] {

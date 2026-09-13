@@ -41,8 +41,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 		if err != nil {
 			continue
 		}
-		resp.Body.Close()
-
+		_ = resp.Body.Close()
 		cspHeader := resp.Header.Get("Content-Security-Policy")
 		cspro := resp.Header.Get("Content-Security-Policy-Report-Only")
 

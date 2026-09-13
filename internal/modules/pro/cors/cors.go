@@ -96,8 +96,7 @@ func (s *Scanner) probeEndpointCORS(
 	if err != nil {
 		return nil
 	}
-	resp.Body.Close()
-
+	_ = resp.Body.Close()
 	allowedOrigin := resp.Header.Get("Access-Control-Allow-Origin")
 	allowCredentials := resp.Header.Get("Access-Control-Allow-Credentials")
 

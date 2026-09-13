@@ -77,7 +77,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 			continue
 		}
 		responseBody, err := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil {
 			continue
 		}
@@ -104,8 +104,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 		if err != nil {
 			continue
 		}
-		resp.Body.Close()
-
+		_ = resp.Body.Close()
 		location := resp.Header.Get("Location")
 		findings = append(findings, checks.LogoutOpenRedirect(
 			target.Host, endpointURL, lo.name, testURL,
@@ -132,7 +131,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 			continue
 		}
 		responseBody, err := io.ReadAll(io.LimitReader(resp.Body, 128*1024))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil || resp.StatusCode == http.StatusNotFound {
 			continue
 		}

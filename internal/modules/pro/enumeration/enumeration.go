@@ -73,7 +73,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 			continue
 		}
 		responseBody, err := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil || resp.StatusCode == http.StatusNotFound {
 			continue
 		}
@@ -89,7 +89,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 		req.Header.Set("User-Agent", httpclient.DefaultUserAgent)
 		if resp, err := s.httpClient.Do(req); err == nil {
 			responseBody, _ := io.ReadAll(io.LimitReader(resp.Body, 256*1024))
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			findings = append(findings, checks.LoginPageEnum(target.Host, loginURL, string(responseBody))...)
 		}
 	}
@@ -109,7 +109,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 			continue
 		}
 		responseBody, err := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil || resp.StatusCode == http.StatusNotFound {
 			continue
 		}

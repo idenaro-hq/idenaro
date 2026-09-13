@@ -56,7 +56,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 		}
 
 		responseBody, err := io.ReadAll(io.LimitReader(resp.Body, 512*1024))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil || resp.StatusCode == http.StatusNotFound {
 			continue
 		}
@@ -89,7 +89,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 		if err != nil {
 			continue
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if httpclient.RedirectLooksSafe(req.URL, httpclient.EffectiveFinalURL(resp, nil), resp.Header.Get("Content-Type"), nil) {
 			continue
 		}
@@ -121,7 +121,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 			continue
 		}
 		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 64*1024))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		finalURL := httpclient.EffectiveFinalURL(resp, respBody)
 		if httpclient.RedirectLooksSafe(req.URL, finalURL, resp.Header.Get("Content-Type"), respBody) {
 			continue

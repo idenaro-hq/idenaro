@@ -90,7 +90,7 @@ func (s *Scanner) checkLoginPageHeaders(ctx context.Context, target modules.Targ
 		csp := resp.Header.Get("Content-Security-Policy")
 		cjFindings := checks.Clickjacking(target.Host, pageURL, resp)
 		cspFindings := checks.AuthPageCSP(target.Host, pageURL, csp)
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		return append(cjFindings, cspFindings...)
 	}
 	return nil
@@ -117,8 +117,7 @@ func (s *Scanner) checkSilentAuth(ctx context.Context, target modules.Target) []
 	if err != nil {
 		return checks.SilentAuth(target.Host, probeURL, 0, "")
 	}
-	resp.Body.Close()
-
+	_ = resp.Body.Close()
 	location := checks.ParseLocation(resp)
 	return checks.SilentAuth(target.Host, probeURL, resp.StatusCode, location)
 }
@@ -138,7 +137,7 @@ func (s *Scanner) discoverAuthzEndpoint(ctx context.Context, target modules.Targ
 		if err != nil {
 			return ""
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if resp.StatusCode < 500 {
 			return u
 		}

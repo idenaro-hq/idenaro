@@ -43,7 +43,7 @@ func (s *Scanner) Run(ctx context.Context, target modules.Target) ([]finding.Fin
 			continue
 		}
 		responseBody, err := io.ReadAll(io.LimitReader(resp.Body, 128*1024))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 		if err != nil {
 			continue
 		}
